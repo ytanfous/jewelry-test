@@ -1,0 +1,314 @@
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model user {
+  id                 Int                  @id @default(autoincrement())
+  username           String               @unique
+  password           String
+  count              Int
+  logo               String?
+  type               String?
+  CompanyName        String?
+  name               String?
+  location           String?
+  email              String?
+  phone              String?
+  jewelers           jeweler[]
+  products           products[]
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  TransactionHistory transactionhistory[]
+  lastSignIn         DateTime             @default(now())
+  ConnectionHistory  connectionhistory[]
+  Slaf               slaf[]
+  SalfHistory        salfhistory[]
+  sessionRevokedAt   DateTime?
+}
+
+model connectionhistory {
+  id        Int      @id @default(autoincrement())
+  user      user     @relation(fields: [userId], references: [id])
+  userId    Int
+  loginTime DateTime @default(now())
+  ipAddress String?
+}
+
+model products {
+  id                 Int                  @id @default(autoincrement())
+  code               String
+  model              String?
+  origin             String?
+  carat              String?
+  weight             String?
+  status             String
+  userId             Int
+  user               user                 @relation(fields: [userId], references: [id])
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  jewelerId          Int?
+  Jeweler            jeweler?             @relation(fields: [jewelerId], references: [id])
+  date               DateTime?
+  Guarantee          guarantee?           @relation(fields: [guaranteeId], references: [id])
+  guaranteeId        Int?
+  OrderHistory       orderhistory[]
+  TransactionHistory transactionhistory[]
+}
+
+model supplier {
+  id                  Int            @id @default(autoincrement())
+  name                String?
+  contact             String?
+  userId              Int
+  formattedSupplierId String         @unique
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  orders              order[]        @relation("SupplierOrders")
+  OrderHistory        orderhistory[]
+  note                String?        @db.VarChar(10000)
+  advance             String?
+  price               String?
+}
+
+model userSupplierSequence {
+  userId  Int @id
+  lastSeq Int @default(0)
+}
+
+model order {
+  id                  Int            @id @default(autoincrement())
+  name                String?
+  model               String?
+  origin              String?
+  carat               String?
+  weight              String?
+  status              Boolean
+  userId              Int
+  quantity            Int?
+  image               String?
+  supplierId          Int?
+  months              String?
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  formattedOrderId    String         @unique
+  formattedSupplierId String?
+  supplier            supplier?      @relation("SupplierOrders", fields: [supplierId], references: [id], onDelete: Cascade)
+  OrderHistory        orderhistory[]
+  note                String?        @db.VarChar(10000)
+  advance             String?
+  price               String?
+  clientCode          String?
+  client              client?        @relation(fields: [clientid], references: [id])
+  clientid            Int?
+}
+
+model userOrderSequence {
+  userId  Int @id
+  lastSeq Int @default(0)
+}
+
+model orderhistory {
+  id         Int       @id @default(autoincrement())
+  orderId    Int
+  productId  Int?
+  amount     String?
+  supplierId Int?
+  action     String
+  timestamp  DateTime  @default(now())
+  order      order?    @relation(fields: [orderId], references: [id])
+  product    products? @relation(fields: [productId], references: [id])
+  supplier   supplier? @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+}
+
+model client {
+  id         Int     @id @default(autoincrement())
+  name       String?
+  phone      String?
+  location   String?
+  clientCode String  @unique
+  userId     Int
+
+  orders    order[]
+  savings   saving[]
+  guarantee guarantee[]
+
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
+}
+
+model saving {
+  id                 Int             @id @default(autoincrement())
+  name               String
+  location           String?
+  phone              String
+  amount             Int
+  status             Boolean
+  note               String?         @db.VarChar(10000)
+  userId             Int
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  UserSavingSequence String          @unique
+  SavingHistory      savinghistory[]
+  clientCode         String?
+  client             client?         @relation(fields: [clientid], references: [id])
+  clientid           Int?
+}
+
+model userClientSequence {
+  userId  Int @id
+  lastSeq Int @default(0)
+}
+
+model GuaranteeHistory {
+  id          Int      @id @default(autoincrement())
+  guaranteeId Int
+  amount      Decimal // Stores the transaction amount
+  action      String
+  timestamp   DateTime @default(now())
+
+  guarantee guarantee @relation(fields: [guaranteeId], references: [id])
+}
+
+model savinghistory {
+  id        Int      @id @default(autoincrement())
+  action    String
+  savingId  Int
+  userId    Int
+  details   String
+  createdAt DateTime @default(now())
+  saving    saving   @relation(fields: [savingId], references: [id], onDelete: Cascade)
+}
+
+model userSavingSequence {
+  userId  Int @id
+  lastSeq Int @default(0)
+}
+
+model guarantee {
+  id                   Int           @id @default(autoincrement())
+  name                 String?
+  phone                String?
+  rows                 products[]
+  selectedComponent    String
+  price                Int?
+  advance              String?
+  months               String?
+  note                 String?       @db.VarChar(10000)
+  tableData            facilitated[]
+  status               String?
+  userId               Int
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+  formattedGuaranteeId String        @unique
+  clientCode           String?
+  client               client?       @relation(fields: [clientid], references: [id])
+  clientid             Int?
+
+  GuaranteeHistory GuaranteeHistory[]
+}
+
+model facilitated {
+  id          Int       @id @default(autoincrement())
+  date        DateTime
+  checkNumber String
+  amount      String
+  status      Boolean
+  guarantee   guarantee @relation(fields: [guaranteeId], references: [id], onDelete: Cascade)
+  guaranteeId Int
+}
+
+model userGuaranteeSequence {
+  userId  Int @id
+  lastSeq Int @default(0)
+}
+
+model type {
+  id     Int    @id @default(autoincrement())
+  name   String
+  userId Int?
+}
+
+model provenance {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+}
+
+model carat {
+  id    Int @id @default(autoincrement())
+  value Int @unique
+}
+
+model jeweler {
+  id                 Int                  @id @default(autoincrement())
+  name               String
+  phone              String?
+  image              String?
+  storeName          String?
+  user               user                 @relation(fields: [userId], references: [id])
+  userId             Int
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  Products           products[]
+  TransactionHistory transactionhistory[]
+  Slaf               slaf[]
+  SalfHistory        salfhistory[]
+}
+
+model slaf {
+  id          Int           @id @default(autoincrement())
+  code        String?
+  user        user          @relation(fields: [userId], references: [id])
+  userId      Int
+  jewelerId   Int
+  jeweler     jeweler       @relation(fields: [jewelerId], references: [id])
+  amount      String? // Changed to String
+  note        String?       @db.VarChar(10000)
+  unit        String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  SalfHistory salfhistory[]
+}
+
+model userSlafSequence {
+  id      Int @id @default(autoincrement())
+  userId  Int @unique
+  lastSeq Int
+}
+
+model userProductSequence {
+  id      Int @id @default(autoincrement())
+  userId  Int @unique
+  lastSeq Int
+}
+
+model salfhistory {
+  id        Int      @id @default(autoincrement())
+  slaf      slaf     @relation(fields: [slafId], references: [id])
+  slafId    Int
+  user      user     @relation(fields: [userId], references: [id])
+  userId    Int
+  jeweler   jeweler  @relation(fields: [jewelerId], references: [id])
+  jewelerId Int
+  value     String? // Changed to String
+  note      String?  @db.VarChar(10000)
+  action    String
+  createdAt DateTime @default(now())
+}
+
+model transactionhistory {
+  id        Int      @id @default(autoincrement())
+  productId Int
+  product   products @relation(fields: [productId], references: [id])
+  jewelerId Int
+  jeweler   jeweler  @relation(fields: [jewelerId], references: [id])
+  userId    Int
+  user      user     @relation(fields: [userId], references: [id])
+  note      String?  @db.VarChar(10000)
+  status    String
+  date      DateTime @default(now())
+}

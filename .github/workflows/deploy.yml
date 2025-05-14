@@ -17,7 +17,7 @@ jobs:
       - name: Print HOSTNAME_DEVDATA
         run: echo "${{ secrets.HOSTNAME_DATACLOUD }}"
 
-      - name: SSH jewelry-shop
+      - name: SSH jewelry-test
         # Use the 'appleboy/ssh-action' action for SSH deployment
         uses: appleboy/ssh-action@master
         with:
@@ -60,4 +60,4 @@ jobs:
             npm run build
 
             # Restart the application using PM2
-            pm2 restart jewelry-store
+            pm2 restart 172.16.200.233

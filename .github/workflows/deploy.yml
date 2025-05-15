@@ -1,0 +1,63 @@
+name: Deployment Workflow
+
+# Trigger this workflow on pushes to the specified branch
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Print HOSTNAME_DEVDATA
+        run: echo "${{ secrets.HOSTNAME_DATACLOUD }}"
+
+      - name: SSH jewelry-test
+        # Use the 'appleboy/ssh-action' action for SSH deployment
+        uses: appleboy/ssh-action@master
+        with:
+          host: "${{ secrets.HOSTNAME_DEVDATA }}"
+          username: root
+          password: ${{ secrets.PASSWORD }}
+          port: 22
+          script: |
+            # Set up NVM and Node.js    
+            export NVM_DIR=~/.nvm
+            source ~/.nvm/nvm.sh
+
+            # Navigate to your project directory
+            cd /DevData/jewelry-store
+
+            # Pull the latest changes from the GitHub repository
+            git pull
+
+            # Install dependencies
+            npm install
+
+            # Set the database URL environment variable
+            export DATABASE_URL="${{ secrets.DATABASE_URL }}"
+
+            MIGRATIONS_COUNT=$(ls -1 prisma/migrations | wc -l)
+            APPLIED_MIGRATIONS_COUNT=$(npx prisma migrate status --schema=prisma/schema.prisma | grep 'Applied' | wc -l)
+
+            if [ "$MIGRATIONS_COUNT" -gt "$APPLIED_MIGRATIONS_COUNT" ]; then
+              echo "New migrations found, running 'npx prisma db pull' to sync schema with database."
+              # Sync the schema with the database
+              npx prisma db pull
+            else
+              echo "No new migrations found, skipping 'db pull'."
+            fi
+
+            # Run migrations safely (apply new migrations without resetting the database)
+            npx prisma migrate deploy
+
+            # Build the project
+            npm run build
+
+            # Restart the application using PM2
+            pm2 restart 172.16.200.233

@@ -1,7 +1,9 @@
-import React, {useEffect,  useState} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import { IoMdNotifications } from "react-icons/io";
 import { useSession } from "next-auth/react";
 import Modal from "@/components/bids/UI/Modal";
+import Card from "@/components/jewelry/cards/Cards";
+import StateCheck from "@/components/jewelry/guarantee/facilitated/StateCheck";
 
 
 function NotificationPopup() {

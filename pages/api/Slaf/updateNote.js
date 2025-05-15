@@ -5,6 +5,7 @@ export default async function handler(req, res) {
         try {
             const { id, jewelerId, userId, note } = req.body;
 
+            // Validate required fields
             if (!id || !jewelerId || !userId) {
                 return res.status(400).json({ error: "Missing required fields." });
             }

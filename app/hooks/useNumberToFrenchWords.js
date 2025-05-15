@@ -1,4 +1,4 @@
-
+// hooks/useNumberToFrenchWords.js
 const units = [
     '', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf'
 ];

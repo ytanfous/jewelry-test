@@ -24,6 +24,10 @@ export async function middleware(req) {
     }
 
 
+    if (pathname.startsWith('/admin') && (!token || userRole !== 'admin' || isTokenExpired)) {
+        return NextResponse.redirect(new URL('/jewelry', req.url));
+    }
+
     if ((!token || !userRole || isTokenExpired) && (pathname.startsWith('/auction') || pathname.startsWith('/jewelry'))) {
         return NextResponse.redirect(new URL('/', req.url));
     }
@@ -32,5 +36,5 @@ export async function middleware(req) {
 }
 
 export const config = {
-    matcher: ['/',  '/jewelry/:path*'],
+    matcher: ['/', '/auction/:path*', '/jewelry/:path*', '/admin/:path*'],
 };

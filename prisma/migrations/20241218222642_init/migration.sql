@@ -14,7 +14,6 @@ CREATE TABLE `user` (
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
     `lastSignIn` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `sessionRevokedAt` DATETIME(3) NULL,
 
     UNIQUE INDEX `user_username_key`(`username`),
     PRIMARY KEY (`id`)
@@ -85,9 +84,7 @@ CREATE TABLE `order` (
     `status` BOOLEAN NOT NULL,
     `userId` INTEGER NOT NULL,
     `quantity` INTEGER NULL,
-    `image` VARCHAR(191) NULL,
     `supplierId` INTEGER NULL,
-    `months` VARCHAR(191) NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
     `formattedOrderId` VARCHAR(191) NOT NULL,
@@ -95,8 +92,6 @@ CREATE TABLE `order` (
     `note` VARCHAR(10000) NULL,
     `advance` VARCHAR(191) NULL,
     `price` VARCHAR(191) NULL,
-    `clientCode` VARCHAR(191) NULL,
-    `clientid` INTEGER NULL,
 
     UNIQUE INDEX `order_formattedOrderId_key`(`formattedOrderId`),
     PRIMARY KEY (`id`)
@@ -115,26 +110,10 @@ CREATE TABLE `orderhistory` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `orderId` INTEGER NOT NULL,
     `productId` INTEGER NULL,
-    `amount` VARCHAR(191) NULL,
-    `supplierId` INTEGER NULL,
+    `supplierId` INTEGER NOT NULL,
     `action` VARCHAR(191) NOT NULL,
     `timestamp` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
-CREATE TABLE `client` (
-    `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `name` VARCHAR(191) NULL,
-    `phone` VARCHAR(191) NULL,
-    `location` VARCHAR(191) NULL,
-    `clientCode` VARCHAR(191) NOT NULL,
-    `userId` INTEGER NOT NULL,
-    `createdAt` DATETIME(3) NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `updatedAt` DATETIME(3) NULL,
-
-    UNIQUE INDEX `client_clientCode_key`(`clientCode`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -142,38 +121,16 @@ CREATE TABLE `client` (
 CREATE TABLE `saving` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `name` VARCHAR(191) NOT NULL,
-    `location` VARCHAR(191) NULL,
+    `location` VARCHAR(191) NOT NULL,
     `phone` VARCHAR(191) NOT NULL,
     `amount` INTEGER NOT NULL,
     `status` BOOLEAN NOT NULL,
-    `note` VARCHAR(10000) NULL,
     `userId` INTEGER NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
     `UserSavingSequence` VARCHAR(191) NOT NULL,
-    `clientCode` VARCHAR(191) NULL,
-    `clientid` INTEGER NULL,
 
     UNIQUE INDEX `saving_UserSavingSequence_key`(`UserSavingSequence`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
-CREATE TABLE `userClientSequence` (
-    `userId` INTEGER NOT NULL,
-    `lastSeq` INTEGER NOT NULL DEFAULT 0,
-
-    PRIMARY KEY (`userId`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
-CREATE TABLE `GuaranteeHistory` (
-    `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `guaranteeId` INTEGER NOT NULL,
-    `amount` DECIMAL(65, 30) NOT NULL,
-    `action` VARCHAR(191) NOT NULL,
-    `timestamp` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -212,8 +169,6 @@ CREATE TABLE `guarantee` (
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
     `formattedGuaranteeId` VARCHAR(191) NOT NULL,
-    `clientCode` VARCHAR(191) NULL,
-    `clientid` INTEGER NULL,
 
     UNIQUE INDEX `guarantee_formattedGuaranteeId_key`(`formattedGuaranteeId`),
     PRIMARY KEY (`id`)
@@ -342,6 +297,37 @@ CREATE TABLE `transactionhistory` (
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
+-- CreateTable
+CREATE TABLE `auction` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `title` VARCHAR(191) NOT NULL,
+    `carat` DECIMAL(10, 2) NOT NULL,
+    `weight` DECIMAL(10, 2) NOT NULL,
+    `type` VARCHAR(191) NOT NULL,
+    `description` VARCHAR(1000) NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+    `startPrice` DECIMAL(10, 2) NOT NULL,
+    `currentPrice` DECIMAL(10, 2) NOT NULL,
+    `nameBid` VARCHAR(191) NULL,
+    `pictures` JSON NULL,
+    `timer` DATETIME(3) NULL,
+    `status` VARCHAR(191) NOT NULL,
+    `participate` INTEGER NULL,
+    `userId` INTEGER NULL,
+
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `_UserAuctions` (
+    `A` INTEGER NOT NULL,
+    `B` INTEGER NOT NULL,
+
+    UNIQUE INDEX `_UserAuctions_AB_unique`(`A`, `B`),
+    INDEX `_UserAuctions_B_index`(`B`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
 -- AddForeignKey
 ALTER TABLE `connectionhistory` ADD CONSTRAINT `connectionhistory_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `user`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
@@ -358,9 +344,6 @@ ALTER TABLE `products` ADD CONSTRAINT `products_guaranteeId_fkey` FOREIGN KEY (`
 ALTER TABLE `order` ADD CONSTRAINT `order_supplierId_fkey` FOREIGN KEY (`supplierId`) REFERENCES `supplier`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `order` ADD CONSTRAINT `order_clientid_fkey` FOREIGN KEY (`clientid`) REFERENCES `client`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE `orderhistory` ADD CONSTRAINT `orderhistory_orderId_fkey` FOREIGN KEY (`orderId`) REFERENCES `order`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -370,16 +353,7 @@ ALTER TABLE `orderhistory` ADD CONSTRAINT `orderhistory_productId_fkey` FOREIGN 
 ALTER TABLE `orderhistory` ADD CONSTRAINT `orderhistory_supplierId_fkey` FOREIGN KEY (`supplierId`) REFERENCES `supplier`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `saving` ADD CONSTRAINT `saving_clientid_fkey` FOREIGN KEY (`clientid`) REFERENCES `client`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `GuaranteeHistory` ADD CONSTRAINT `GuaranteeHistory_guaranteeId_fkey` FOREIGN KEY (`guaranteeId`) REFERENCES `guarantee`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `savinghistory` ADD CONSTRAINT `savinghistory_savingId_fkey` FOREIGN KEY (`savingId`) REFERENCES `saving`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `guarantee` ADD CONSTRAINT `guarantee_clientid_fkey` FOREIGN KEY (`clientid`) REFERENCES `client`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE `savinghistory` ADD CONSTRAINT `savinghistory_savingId_fkey` FOREIGN KEY (`savingId`) REFERENCES `saving`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `facilitated` ADD CONSTRAINT `facilitated_guaranteeId_fkey` FOREIGN KEY (`guaranteeId`) REFERENCES `guarantee`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
@@ -410,3 +384,9 @@ ALTER TABLE `transactionhistory` ADD CONSTRAINT `transactionhistory_jewelerId_fk
 
 -- AddForeignKey
 ALTER TABLE `transactionhistory` ADD CONSTRAINT `transactionhistory_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `user`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `_UserAuctions` ADD CONSTRAINT `_UserAuctions_A_fkey` FOREIGN KEY (`A`) REFERENCES `auction`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `_UserAuctions` ADD CONSTRAINT `_UserAuctions_B_fkey` FOREIGN KEY (`B`) REFERENCES `user`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;

@@ -1,10 +1,10 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
-}
-
-generator client {
-  provider = "prisma-client-js"
 }
 
 model user {
@@ -19,24 +19,27 @@ model user {
   location           String?
   email              String?
   phone              String?
-  jewelers           jeweler[]
-  products           products[]
   createdAt          DateTime             @default(now())
   updatedAt          DateTime             @updatedAt
-  TransactionHistory transactionhistory[]
   lastSignIn         DateTime             @default(now())
-  ConnectionHistory  connectionhistory[]
-  Slaf               slaf[]
-  SalfHistory        salfhistory[]
   sessionRevokedAt   DateTime?
+  ConnectionHistory  connectionhistory[]
+  jewelers           jeweler[]
+  products           products[]
+  SalfHistory        salfhistory[]
+  Slaf               slaf[]
+  TransactionHistory transactionhistory[]
+  auction            auction[]            @relation("userauctions")
 }
 
 model connectionhistory {
   id        Int      @id @default(autoincrement())
-  user      user     @relation(fields: [userId], references: [id])
   userId    Int
   loginTime DateTime @default(now())
   ipAddress String?
+  user      user     @relation(fields: [userId], references: [id])
+
+  @@index([userId], map: "connectionhistory_userId_fkey")
 }
 
 model products {
@@ -48,16 +51,20 @@ model products {
   weight             String?
   status             String
   userId             Int
-  user               user                 @relation(fields: [userId], references: [id])
   createdAt          DateTime             @default(now())
   updatedAt          DateTime             @updatedAt
   jewelerId          Int?
-  Jeweler            jeweler?             @relation(fields: [jewelerId], references: [id])
   date               DateTime?
-  Guarantee          guarantee?           @relation(fields: [guaranteeId], references: [id])
   guaranteeId        Int?
   OrderHistory       orderhistory[]
+  Guarantee          guarantee?           @relation(fields: [guaranteeId], references: [id])
+  Jeweler            jeweler?             @relation(fields: [jewelerId], references: [id])
+  user               user                 @relation(fields: [userId], references: [id])
   TransactionHistory transactionhistory[]
+
+  @@index([guaranteeId], map: "products_guaranteeId_fkey")
+  @@index([jewelerId], map: "products_jewelerId_fkey")
+  @@index([userId], map: "products_userId_fkey")
 }
 
 model supplier {
@@ -68,16 +75,11 @@ model supplier {
   formattedSupplierId String         @unique
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @updatedAt
-  orders              order[]        @relation("SupplierOrders")
-  OrderHistory        orderhistory[]
   note                String?        @db.VarChar(10000)
   advance             String?
   price               String?
-}
-
-model userSupplierSequence {
-  userId  Int @id
-  lastSeq Int @default(0)
+  orders              order[]        @relation("SupplierOrders")
+  OrderHistory        orderhistory[]
 }
 
 model order {
@@ -90,55 +92,55 @@ model order {
   status              Boolean
   userId              Int
   quantity            Int?
-  image               String?
   supplierId          Int?
-  months              String?
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @updatedAt
   formattedOrderId    String         @unique
   formattedSupplierId String?
-  supplier            supplier?      @relation("SupplierOrders", fields: [supplierId], references: [id], onDelete: Cascade)
-  OrderHistory        orderhistory[]
   note                String?        @db.VarChar(10000)
   advance             String?
   price               String?
+  image               String?
   clientCode          String?
-  client              client?        @relation(fields: [clientid], references: [id])
   clientid            Int?
-}
+  months              String?
+  client              client?        @relation(fields: [clientid], references: [id])
+  supplier            supplier?      @relation("SupplierOrders", fields: [supplierId], references: [id], onDelete: Cascade)
+  OrderHistory        orderhistory[]
 
-model userOrderSequence {
-  userId  Int @id
-  lastSeq Int @default(0)
+  @@index([clientid], map: "order_clientid_fkey")
+  @@index([supplierId], map: "order_supplierId_fkey")
 }
 
 model orderhistory {
   id         Int       @id @default(autoincrement())
   orderId    Int
   productId  Int?
-  amount     String?
   supplierId Int?
   action     String
   timestamp  DateTime  @default(now())
-  order      order?    @relation(fields: [orderId], references: [id])
+  amount     String?
+  order      order     @relation(fields: [orderId], references: [id])
   product    products? @relation(fields: [productId], references: [id])
   supplier   supplier? @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  @@index([orderId], map: "orderhistory_orderId_fkey")
+  @@index([productId], map: "orderhistory_productId_fkey")
+  @@index([supplierId], map: "orderhistory_supplierId_fkey")
 }
 
 model client {
-  id         Int     @id @default(autoincrement())
+  id         Int         @id @default(autoincrement())
   name       String?
   phone      String?
   location   String?
-  clientCode String  @unique
+  clientCode String      @unique
   userId     Int
-
-  orders    order[]
-  savings   saving[]
-  guarantee guarantee[]
-
-  createdAt DateTime? @default(now())
-  updatedAt DateTime? @updatedAt
+  createdAt  DateTime?   @default(now())
+  updatedAt  DateTime?   @updatedAt
+  guarantee  guarantee[]
+  orders     order[]
+  savings    saving[]
 }
 
 model saving {
@@ -148,30 +150,17 @@ model saving {
   phone              String
   amount             Int
   status             Boolean
-  note               String?         @db.VarChar(10000)
   userId             Int
   createdAt          DateTime        @default(now())
   updatedAt          DateTime        @updatedAt
   UserSavingSequence String          @unique
-  SavingHistory      savinghistory[]
   clientCode         String?
-  client             client?         @relation(fields: [clientid], references: [id])
   clientid           Int?
-}
+  note               String?         @db.VarChar(10000)
+  client             client?         @relation(fields: [clientid], references: [id])
+  SavingHistory      savinghistory[]
 
-model userClientSequence {
-  userId  Int @id
-  lastSeq Int @default(0)
-}
-
-model GuaranteeHistory {
-  id          Int      @id @default(autoincrement())
-  guaranteeId Int
-  amount      Decimal // Stores the transaction amount
-  action      String
-  timestamp   DateTime @default(now())
-
-  guarantee guarantee @relation(fields: [guaranteeId], references: [id])
+  @@index([clientid], map: "saving_clientid_fkey")
 }
 
 model savinghistory {
@@ -182,34 +171,32 @@ model savinghistory {
   details   String
   createdAt DateTime @default(now())
   saving    saving   @relation(fields: [savingId], references: [id], onDelete: Cascade)
-}
 
-model userSavingSequence {
-  userId  Int @id
-  lastSeq Int @default(0)
+  @@index([savingId], map: "savinghistory_savingId_fkey")
 }
 
 model guarantee {
-  id                   Int           @id @default(autoincrement())
+  id                   Int                @id @default(autoincrement())
   name                 String?
   phone                String?
-  rows                 products[]
   selectedComponent    String
   price                Int?
   advance              String?
   months               String?
-  note                 String?       @db.VarChar(10000)
-  tableData            facilitated[]
+  note                 String?            @db.VarChar(10000)
   status               String?
   userId               Int
-  createdAt            DateTime      @default(now())
-  updatedAt            DateTime      @updatedAt
-  formattedGuaranteeId String        @unique
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  formattedGuaranteeId String             @unique
   clientCode           String?
-  client               client?       @relation(fields: [clientid], references: [id])
   clientid             Int?
+  tableData            facilitated[]
+  client               client?            @relation(fields: [clientid], references: [id])
+  guaranteehistory     guaranteehistory[]
+  rows                 products[]
 
-  GuaranteeHistory GuaranteeHistory[]
+  @@index([clientid], map: "guarantee_clientid_fkey")
 }
 
 model facilitated {
@@ -218,13 +205,10 @@ model facilitated {
   checkNumber String
   amount      String
   status      Boolean
-  guarantee   guarantee @relation(fields: [guaranteeId], references: [id], onDelete: Cascade)
   guaranteeId Int
-}
+  guarantee   guarantee @relation(fields: [guaranteeId], references: [id], onDelete: Cascade)
 
-model userGuaranteeSequence {
-  userId  Int @id
-  lastSeq Int @default(0)
+  @@index([guaranteeId], map: "facilitated_guaranteeId_fkey")
 }
 
 model type {
@@ -249,66 +233,135 @@ model jeweler {
   phone              String?
   image              String?
   storeName          String?
-  user               user                 @relation(fields: [userId], references: [id])
   userId             Int
   createdAt          DateTime             @default(now())
   updatedAt          DateTime             @updatedAt
+  user               user                 @relation(fields: [userId], references: [id])
   Products           products[]
-  TransactionHistory transactionhistory[]
-  Slaf               slaf[]
   SalfHistory        salfhistory[]
+  Slaf               slaf[]
+  TransactionHistory transactionhistory[]
+
+  @@index([userId], map: "jeweler_userId_fkey")
 }
 
 model slaf {
   id          Int           @id @default(autoincrement())
   code        String?
-  user        user          @relation(fields: [userId], references: [id])
   userId      Int
   jewelerId   Int
-  jeweler     jeweler       @relation(fields: [jewelerId], references: [id])
-  amount      String? // Changed to String
+  amount      String?
   note        String?       @db.VarChar(10000)
   unit        String?
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
   SalfHistory salfhistory[]
-}
+  jeweler     jeweler       @relation(fields: [jewelerId], references: [id])
+  user        user          @relation(fields: [userId], references: [id])
 
-model userSlafSequence {
-  id      Int @id @default(autoincrement())
-  userId  Int @unique
-  lastSeq Int
-}
-
-model userProductSequence {
-  id      Int @id @default(autoincrement())
-  userId  Int @unique
-  lastSeq Int
+  @@index([jewelerId], map: "slaf_jewelerId_fkey")
+  @@index([userId], map: "slaf_userId_fkey")
 }
 
 model salfhistory {
   id        Int      @id @default(autoincrement())
-  slaf      slaf     @relation(fields: [slafId], references: [id])
   slafId    Int
-  user      user     @relation(fields: [userId], references: [id])
   userId    Int
-  jeweler   jeweler  @relation(fields: [jewelerId], references: [id])
   jewelerId Int
-  value     String? // Changed to String
+  value     String?
   note      String?  @db.VarChar(10000)
   action    String
   createdAt DateTime @default(now())
+  jeweler   jeweler  @relation(fields: [jewelerId], references: [id])
+  slaf      slaf     @relation(fields: [slafId], references: [id])
+  user      user     @relation(fields: [userId], references: [id])
+
+  @@index([jewelerId], map: "salfhistory_jewelerId_fkey")
+  @@index([slafId], map: "salfhistory_slafId_fkey")
+  @@index([userId], map: "salfhistory_userId_fkey")
 }
 
 model transactionhistory {
   id        Int      @id @default(autoincrement())
   productId Int
-  product   products @relation(fields: [productId], references: [id])
   jewelerId Int
-  jeweler   jeweler  @relation(fields: [jewelerId], references: [id])
   userId    Int
-  user      user     @relation(fields: [userId], references: [id])
   note      String?  @db.VarChar(10000)
   status    String
   date      DateTime @default(now())
+  jeweler   jeweler  @relation(fields: [jewelerId], references: [id])
+  product   products @relation(fields: [productId], references: [id])
+  user      user     @relation(fields: [userId], references: [id])
+
+  @@index([jewelerId], map: "transactionhistory_jewelerId_fkey")
+  @@index([productId], map: "transactionhistory_productId_fkey")
+  @@index([userId], map: "transactionhistory_userId_fkey")
+}
+
+model auction {
+  id           Int       @id @default(autoincrement())
+  title        String
+  carat        Decimal   @db.Decimal(10, 2)
+  weight       Decimal   @db.Decimal(10, 2)
+  type         String
+  description  String?   @db.VarChar(1000)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  startPrice   Decimal   @db.Decimal(10, 2)
+  currentPrice Decimal   @db.Decimal(10, 2)
+  nameBid      String?
+  pictures     Json?
+  timer        DateTime?
+  status       String
+  participate  Int?
+  userId       Int?
+  user         user[]    @relation("userauctions")
+}
+
+model guaranteehistory {
+  id          Int       @id @default(autoincrement())
+  guaranteeId Int
+  amount      Decimal
+  action      String
+  timestamp   DateTime  @default(now())
+  guarantee   guarantee @relation(fields: [guaranteeId], references: [id], map: "GuaranteeHistory_guaranteeId_fkey")
+
+  @@index([guaranteeId], map: "GuaranteeHistory_guaranteeId_fkey")
+}
+
+model userclientsequence {
+  userId  Int @id
+  lastSeq Int @default(0)
+}
+
+model userguaranteesequence {
+  userId  Int @id
+  lastSeq Int @default(0)
+}
+
+model userordersequence {
+  userId  Int @id
+  lastSeq Int @default(0)
+}
+
+model userproductsequence {
+  id      Int @id @default(autoincrement())
+  userId  Int @unique(map: "userProductSequence_userId_key")
+  lastSeq Int
+}
+
+model usersavingsequence {
+  userId  Int @id
+  lastSeq Int @default(0)
+}
+
+model userslafsequence {
+  id      Int @id @default(autoincrement())
+  userId  Int @unique(map: "userSlafSequence_userId_key")
+  lastSeq Int
+}
+
+model usersuppliersequence {
+  userId  Int @id
+  lastSeq Int @default(0)
 }

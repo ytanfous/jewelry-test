@@ -212,8 +212,9 @@ function Page() {
             const response = await fetch(`/api/products/delete?id=${id}`, {
                 method: 'DELETE',
             });
+            window.location.reload();
             if (response.ok) {
-                window.location.reload();
+
                 const updatedAuctions = products.filter(auction => auction.id !== id);
                 setProducts(updatedAuctions);
                 handleStopAdding();

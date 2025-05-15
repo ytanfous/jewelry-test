@@ -40,7 +40,7 @@ function Login() {
 
                 // Redirect based on the user role
                 if (data?.type === 'admin') {
-                    router.push('/admin');
+                    router.push('/jewelry');
                 } else {
                     router.push('/jewelry');
                 }

@@ -118,12 +118,7 @@ function Page() {
                     des bijoutiers</h1>
                 <div className="flex  flex-wrap lg:flex-nowrap   gap-2">
                     <div className="flex  flex-wrap lg:flex-nowrap items-center  gap-2">
-                        <button
-                            className="text-white bg-gray-800 hover:bg-gray-600 focus:ring-4 focus:ring-gray-300 h-10 inline-flex
-                             items-center justify-center whitespace-nowrap focus:outline-none font-medium rounded-lg text-sm px-6 py-2.5"
-                        >
-                            Tasli7
-                        </button>
+
                         <button
                             onClick={handleOpenModalReceive}
                             className="text-white bg-gray-800 hover:bg-gray-600 focus:ring-4 focus:ring-gray-300 h-10 inline-flex
